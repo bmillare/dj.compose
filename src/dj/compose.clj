@@ -28,7 +28,7 @@ compositional power of maps.
 fnb-map: keywords -> fnbs
 
 "
-  ([fnb-map root-key ref-fn ref-set-fn!]
+  ([fnb-map root-key root-late? ref-fn ref-set-fn!]
      ((fn add-bind [references temp-root late?]
         (let [the-fnb (fnb-map temp-root)
               {:keys [direct-bindings late-bindings]} (-> the-fnb
@@ -59,9 +59,10 @@ fnb-map: keywords -> fnbs
           return))
       {}
       root-key
-      true))
+      root-late?))
   ([fnb-map root-key]
      (->bind-map fnb-map
                  root-key
+                 true
                  #(atom nil)
                  reset!)))
