@@ -65,26 +65,3 @@ fnb-map: keywords -> fnbs
                  root-key
                  #(atom nil)
                  reset!)))
-
-#_
-(do
-  ((-> (->bind-map {:conj-ping (fnb #{} #{}
-                                    (fn [v]
-                                      (conj v :ping)))
-                    :ping (fnb #{conj-ping} #{pong}
-                               (fn [n v]
-                                 (if (> n 0)
-                                   (@pong n (conj-ping v))
-                                   v)))
-                    :pong-message (fnb #{} #{}
-                                       :pong)
-                    :pong (fnb #{pong-message} #{ping}
-                               (fn [n v]
-                                 (@ping (dec n) (conj v pong-message))))}
-                   :ping)
-       :ping
-       deref)
-   10
-   [])
-  
-  )
