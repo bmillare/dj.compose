@@ -88,7 +88,11 @@ The full argument list of `->bind-map` is:
 
 `root-key`: `->bind-map` will construct the hashmap relative to the dependencies of a specific node. This also means if there are other keys not reached by the root node, then they won't get compiled.
 
-Optionally, to use your own reference types
+Optional:
+
+`root-late?`: You can declare the root is not late-bound, by default this is true.
+
+You can define your own reference type:
 
 `ref-fn`: a 0-arity constructor fn to produce a ref
 
