@@ -18,7 +18,7 @@ The goal of this library is to add compositional power to direct and late bindin
 
 We use hashmaps to obtain the compositional power.
 
-Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves. Also, like prismatic's graph library, we want to these functions to be able to refer to each other as necessary. To be efficient, **user functions*, when called, should not have to go perform a map lookup, and instead refer directly (or late-directly) to access the other **user functions**.
+Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves. Also, like prismatic's graph library, we want to these functions to be able to refer to each other as necessary. To be efficient, **user functions**, when called, should not have to go perform a map lookup, and instead refer directly (or late-directly) to access the other **user functions**.
 
 `->bind-map` produces exactly this data structure. To be useful, we should only have to pass the **user function** definitions and their dependencies.
 
