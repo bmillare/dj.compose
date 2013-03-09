@@ -48,6 +48,8 @@ Ideally, we want a hashmap of keywords representing the **user functions**, to t
 * Support references to other **user functions** (cyclic references)
 * Support direct access. (To be efficient, **user functions**, when called, should not perform a map lookup, and should instead refer directly (or late-directly) to the other **user functions**.)
 
+### `->bind-map`
+
 `->bind-map` produces exactly this data structure. Users only have to pass the **user function** definitions and their dependencies.
 
 Ideal usage:
@@ -55,6 +57,8 @@ Ideal usage:
 (let [x @(:x (dc/->bind-map ...definitions...))]
   (x ...))
 ```
+
+### `fnb`
 
 A **binding function**, or `fnb` for short, is a function that accepts a **bind-map**, and returns a **user function** (but can also be a a plain value if you wanted to) that may depend on some of the values in the **bind-map**. `fnb`s are important for generating the **user functions** that the user will actually call in their code.
 
