@@ -18,10 +18,10 @@ The goal of this library is to add compositional power to direct and late bindin
 
 We use hashmaps to obtain compositional power.
 
-Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves that:
+Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves. In addition the hashmap should:
 
-* Can reference each other (cyclic references)
-* Supports direct access. (To be efficient, **user functions**, when called, should not have to go perform a map lookup, and instead refer directly (or late-directly) to the other **user functions**.)
+* Support references to other **user functions** (cyclic references)
+* Support direct access. (To be efficient, **user functions**, when called, should not perform a map lookup, and should instead refer directly (or late-directly) to the other **user functions**.)
 
 `->bind-map` produces exactly this data structure. Users only have to pass the **user function** definitions and their dependencies.
 
@@ -67,7 +67,11 @@ Optionally, to use your own reference types
 
 If you don't provide your own reference type, dj.compose will use atoms.
 
+*Performance Note:*
 To minimize `deref` overhead, use `java.util.concurrent.atomic.AtomicReference` which has a `(.get)` method. This is slightly faster than **atoms** since we remove an extra invocation. The downside is you will need to typehint the symbols.
+
+
+## Example Usage
 
 ```clojure
   ((-> (->bind-map {:conj-ping (fnb #{} #{}
@@ -86,8 +90,8 @@ To minimize `deref` overhead, use `java.util.concurrent.atomic.AtomicReference` 
                    :ping)
        :ping
        deref)
-   10
+   5
    [])
 ;;=>
-[:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong :ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
+[:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
 ```
