@@ -16,11 +16,14 @@ The goal of this library is to add compositional power to direct and late bindin
 
 ## Methods & Concepts
 
-We use hashmaps to obtain the compositional power.
+We use hashmaps to obtain compositional power.
 
-Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves. Also, like prismatic's graph library, we want to these functions to be able to refer to each other as necessary. To be efficient, **user functions**, when called, should not have to go perform a map lookup, and instead refer directly (or late-directly) to access the other **user functions**.
+Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves that:
 
-`->bind-map` produces exactly this data structure. To be useful, we should only have to pass the **user function** definitions and their dependencies.
+* Can reference each other (cyclic references)
+* Supports direct access. (To be efficient, **user functions**, when called, should not have to go perform a map lookup, and instead refer directly (or late-directly) to the other **user functions**.)
+
+`->bind-map` produces exactly this data structure. Users only have to pass the **user function** definitions and their dependencies.
 
 Ideal usage:
 ```clojure
@@ -35,7 +38,7 @@ A **binding function**, or `fnb` for short, is a function that accepts a **bind-
   (user-fn ...))
 ```
 
-`fnb` is a macro that lets you define **binding functions**. `fnb`s accpet a set of direct and late binding symbols, and then the body.
+`fnb` is a macro that lets you define **binding functions**. `fnb`s accept a set of direct and late binding symbols, and then the body.
 
 Example `fnb`:
 ```clojure
@@ -46,7 +49,9 @@ Example `fnb`:
 	late-compile)))
 ```
 
-In more detail, `->bind-map` obtains dependency information from a `fnb-map`, a hashmap of keywords representing **user functions** -> `fnb`. `->bind-map` will call the `fnb`s in the correct order, updating the **bind-map** with the "compiled" **user functions**. If the dependents are declared late-bound, then a **reference** is put in the map instead. This **reference** is set at the end of the `->bind-map` call, to the value returned by `fnb`.
+In more detail, `->bind-map` obtains dependency information from a `fnb-map`, a hashmap of keywords representing **user functions** -> `fnb`.
+
+`->bind-map` will call the `fnb`s in the correct order, updating the **bind-map** with the "compiled" **user functions**. If the dependents are declared late-bound, then a **reference** is put in the map instead. This **reference** is set at the end of the `->bind-map` call, to the value returned by `fnb`.
 
 The full argument list of `->bind-map` is:
 
