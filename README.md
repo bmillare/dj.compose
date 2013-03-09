@@ -17,24 +17,24 @@ The goal of this library is to add compositional power to direct and late bindin
 ## Example Usage
 
 ```clojure
-  ((-> (->bind-map {:conj-ping (fnb #{} #{}
-                                    (fn [v]
-                                      (conj v :ping)))
-                    :ping (fnb #{conj-ping} #{pong}
-                               (fn [n v]
-                                 (if (> n 0)
-                                   (@pong n (conj-ping v))
-                                   v)))
-                    :pong-message (fnb #{} #{}
-                                       :pong)
-                    :pong (fnb #{pong-message} #{ping}
-                               (fn [n v]
-                                 (@ping (dec n) (conj v pong-message))))}
-                   :ping)
-       :ping
-       deref)
-   5
-   [])
+(let [bind-map {:conj-ping (fnb #{} #{}
+                                (fn [v]
+                                  (conj v :ping)))
+                :ping (fnb #{conj-ping} #{pong}
+                           (fn [n v]
+                             (if (> n 0)
+                               (@pong n (conj-ping v))
+                               v)))
+                :pong-message (fnb #{} #{}
+                                   :pong)
+                :pong (fnb #{pong-message} #{ping}
+                           (fn [n v]
+                             (@ping (dec n) (conj v pong-message))))}
+      ping (-> bind-map
+               (->bind-map :ping)
+               :ping
+               deref)]
+  (ping 5 []))
 ;;=>
 [:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
 ```
