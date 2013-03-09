@@ -14,6 +14,31 @@ Composable mutual recursion function composition
 
 The goal of this library is to add compositional power to direct and late bindings to enhance programming with mutually dependent functions.
 
+## Example Usage
+
+```clojure
+  ((-> (->bind-map {:conj-ping (fnb #{} #{}
+                                    (fn [v]
+                                      (conj v :ping)))
+                    :ping (fnb #{conj-ping} #{pong}
+                               (fn [n v]
+                                 (if (> n 0)
+                                   (@pong n (conj-ping v))
+                                   v)))
+                    :pong-message (fnb #{} #{}
+                                       :pong)
+                    :pong (fnb #{pong-message} #{ping}
+                               (fn [n v]
+                                 (@ping (dec n) (conj v pong-message))))}
+                   :ping)
+       :ping
+       deref)
+   5
+   [])
+;;=>
+[:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
+```
+
 ## Methods & Concepts
 
 We use hashmaps to obtain compositional power.
@@ -69,29 +94,3 @@ If you don't provide your own reference type, dj.compose will use atoms.
 
 *Performance Note:*
 To minimize `deref` overhead, use `java.util.concurrent.atomic.AtomicReference` which has a `(.get)` method. This is slightly faster than **atoms** since we remove an extra invocation. The downside is you will need to typehint the symbols.
-
-
-## Example Usage
-
-```clojure
-  ((-> (->bind-map {:conj-ping (fnb #{} #{}
-                                    (fn [v]
-                                      (conj v :ping)))
-                    :ping (fnb #{conj-ping} #{pong}
-                               (fn [n v]
-                                 (if (> n 0)
-                                   (@pong n (conj-ping v))
-                                   v)))
-                    :pong-message (fnb #{} #{}
-                                       :pong)
-                    :pong (fnb #{pong-message} #{ping}
-                               (fn [n v]
-                                 (@ping (dec n) (conj v pong-message))))}
-                   :ping)
-       :ping
-       deref)
-   5
-   [])
-;;=>
-[:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
-```
