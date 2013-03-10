@@ -1,32 +1,35 @@
 dj.compose
 ==========
 
-Composable mutual recursion function composition
+Composable mutual recursion function composition.
 
-## Motivation
+*While currently this is a proof-of-concept library, users should not be afraid to use it. The code is very simple. Since the source is only 1 macro and 1 function, I encourage users to read the code.*
 
-`let`s with many function bindings give us locality and minimalism but are problematic:
+# Motivation
 
-* As the number of bindings increase the `let` becomes unweidly and hard to test. You typically have to copy paste sub components into a new `let` if you want to seperate and test.
-* Bindings are not composable since binding order must be compatible with the dependency graph.
-* Late binding mechanisms are not built in for handling cylic dependencies
+When building a network of mutually recursive functions, clojure provides the `let` and `letfn` forms. While these forms allow users to define functions and bind them to symbols, they are problematic in that:
 
-The goal of this library is to add compositional power to direct and late bindings to enhance programming with mutually dependent functions.
+* As the number of bindings increase the `let` becomes unwieldy and hard to test. If you want to seperate and test sub components, users must copy paste the definitions into a new `let` form.
+* Bindings are not composable. Users cannot arbitrarily add, remove, and combine different sets of functions.
+* Binding order must be compatible with the dependency graph, making the code less declarative.
+* Late binding mechanisms are not built into `let` for handling cylic dependencies.
+
+The goal of this library is to add compositional power to direct and late bindings in a *declarative* way, to enhance programming with mutually dependent functions.
 
 ## Example Usage
 
 ```clojure
-(let [bind-map {:conj-ping (fnb #{} #{}
+(let [bind-fn-map {:conj-ping (fnb #{} #{}
                                 (fn [v]
                                   (conj v :ping)))
-                :ping (fnb #{conj-ping} #{pong}
+                   :ping (fnb #{conj-ping} #{pong}
                            (fn [n v]
                              (if (> n 0)
                                (@pong n (conj-ping v))
                                v)))
-                :pong-message (fnb #{} #{}
+                   :pong-message (fnb #{} #{}
                                    :pong)
-                :pong (fnb #{pong-message} #{ping}
+                   :pong (fnb #{pong-message} #{ping}
                            (fn [n v]
                              (@ping (dec n) (conj v pong-message))))}
       ping (-> bind-map
@@ -38,18 +41,18 @@ The goal of this library is to add compositional power to direct and late bindin
 [:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
 ```
 
-## Methods & Concepts
+Note that `bind-fn-map` is just a hashmap, so we gain all the composition power of using hashmaps. We can arbitrarily `assoc`, `dissoc`, and `merge` other `bind-fn-map`s.
 
-We use hashmaps to obtain compositional power.
+# Methods & Concepts
 
 Ideally, we want a hashmap of keywords representing the **user functions**, to the **user functions** themselves. In addition the hashmap should:
 
 * Support references to other **user functions** (cyclic references)
-* Support direct access. (To be efficient, **user functions**, when called, should not perform a map lookup, and should instead refer directly (or late-directly) to the other **user functions**.)
+* Support direct access to dependent elements. (To be efficient, **user functions**, when called, should not perform a map lookup, and should instead refer directly (or late-directly) to the other **user functions**.)
 
-### `->bind-map`
+## The `->bind-map` function
 
-`->bind-map` produces exactly this data structure. Users only have to pass the **user function** definitions and their dependencies.
+`->bind-map` produces exactly this data structure. Users must pass the **user function** definitions and their dependencies.
 
 Ideal usage:
 ```clojure
@@ -57,9 +60,9 @@ Ideal usage:
   (x ...))
 ```
 
-### `fnb`
+## The `fnb` macro
 
-A **binding function**, or `fnb` for short, is a function that accepts a **bind-map**, and returns a **user function** (but can also be a a plain value if you wanted to) that may depend on some of the values in the **bind-map**. `fnb`s are important for generating the **user functions** that the user will actually call in their code.
+A **binding function**, or `fnb` for short, is a function that accepts a **bind-map**, and returns a **user function** (but can also be a plain value if you wanted to) that may depend on some of the values in the **bind-map**. `fnb`s are important for generating the **user functions** that the user will actually call in their code.
 
 ```clojure
 (let [user-fn (some-fnb {:x ... :y ...})]
@@ -76,6 +79,8 @@ Example `fnb`:
     	late-parse
 	late-compile)))
 ```
+
+## Discussion
 
 In more detail, `->bind-map` obtains dependency information from a `fnb-map`, a hashmap of keywords representing **user functions** -> `fnb`.
 
