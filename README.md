@@ -7,7 +7,7 @@ Composable mutual recursion function composition
 
 `let`s with many function bindings give us locality and minimalism but are problematic:
 
-* As the number of bindings increase the `let` becomes unweidly and hard to test. You typically have to copy paste sub components into a new let if you want to seperate and test.
+* As the number of bindings increase the `let` becomes unweidly and hard to test. You typically have to copy paste sub components into a new `let` if you want to seperate and test.
 * Bindings are not composable since binding order must be compatible with the dependency graph.
 * Late binding mechanisms are not built in for handling cylic dependencies
 
