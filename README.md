@@ -9,7 +9,7 @@ Composable mutual recursion function composition.
 
 When building a network of mutually recursive functions, clojure provides the `let` and `letfn` forms. While these forms allow users to define functions and bind them to symbols, they are problematic in that:
 
-* As the number of bindings increase the `let` becomes unwieldy and hard to test. If you want to seperate and test sub components, users must copy paste the definitions into a new `let` form.
+* As the number of bindings increase the `let` becomes unwieldy and hard to test. If you want to seperate and test sub-components, users must copy paste the definitions into a new `let` form.
 * Bindings are not composable. Users cannot arbitrarily add, remove, and combine different sets of functions.
 * Binding order must be compatible with the dependency graph, making the code less declarative.
 * Late binding mechanisms are not built into `let` for handling cylic dependencies.
