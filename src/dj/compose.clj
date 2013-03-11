@@ -28,9 +28,11 @@ compositional power of maps.
 fnb-map: keywords -> fnbs
 
 "
-  ([fnb-map root-key root-late? ref-fn ref-set-fn!]
+  ([fnb-map root-key alias-map root-late? ref-fn ref-set-fn!]
      ((fn add-bind [references temp-root late?]
-        (let [the-fnb (fnb-map temp-root)
+        (let [the-fnb (or (fnb-map temp-root)
+                          (fnb-map (alias-map temp-root))
+                          (throw (Exception. (str "keyword " temp-root " not found in fnb-map"))))
               {:keys [direct-bindings late-bindings]} (-> the-fnb
                                                           meta
                                                           :dj.compose)
@@ -63,6 +65,14 @@ fnb-map: keywords -> fnbs
   ([fnb-map root-key]
      (->bind-map fnb-map
                  root-key
+                 {}
+                 true
+                 #(atom nil)
+                 reset!))
+  ([fnb-map root-key alias-map]
+     (->bind-map fnb-map
+                 root-key
+                 alias-map
                  true
                  #(atom nil)
                  reset!)))

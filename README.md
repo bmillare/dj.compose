@@ -94,6 +94,8 @@ The full argument list of `->bind-map` is:
 
 Optional:
 
+`alias-map`: You can define aliases from `:alias -> :existing-key`. This way you can have "interface" keywords and depend on those. Then instead of redefining all functions to use a different key, you just change the alias.
+
 `root-late?`: You can declare the root is not late-bound, by default this is true.
 
 You can define your own reference type:
