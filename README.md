@@ -25,13 +25,13 @@ The goal of this library is to add compositional power to direct and late bindin
                :ping (fnb #{conj-ping} #{pong}
                        (fn [n v]
                          (if (> n 0)
-                           (@pong n (conj-ping v))
+                           (pong n (conj-ping v))
                            v)))
                :pong-message (fnb #{} #{}
                                :pong)
                :pong (fnb #{pong-message} #{ping}
                        (fn [n v]
-                         (@ping (dec n) (conj v pong-message))))}
+                         (ping (dec n) (conj v pong-message))))}
       ping (-> bind-map
                (->bind-map :ping)
                :ping
@@ -104,10 +104,10 @@ You can define your own reference type:
 
 `ref-set-fn!`: sets the ref to a value (eg. `(ref-set-fn! the-ref val)`)
 
-If you don't provide your own reference type, dj.compose will use atoms.
+If you don't provide your own reference type, dj.compose will use `clojure.lang.Vars`.
 
 *Performance Note:*
-To minimize `deref` overhead, use `java.util.concurrent.atomic.AtomicReference` which has a `(.get)` method. This is slightly faster than **atoms** since we remove an extra invocation. The downside is you will need to typehint the symbols.
+To minimize indirection overhead, use `java.util.concurrent.atomic.AtomicReference` which has a `(.get)` method. This is slightly faster than **atoms** and much faster than **Vars** since we remove an extra invocation. The downside is you will need to typehint the symbols and you can't use **Vars** auto invocation of the function.
 
 ## License
 

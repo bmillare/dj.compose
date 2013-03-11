@@ -65,14 +65,12 @@ fnb-map: keywords -> fnbs
   ([fnb-map root-key]
      (->bind-map fnb-map
                  root-key
-                 {}
-                 true
-                 #(atom nil)
-                 reset!))
+                 {}))
   ([fnb-map root-key alias-map]
      (->bind-map fnb-map
                  root-key
                  alias-map
                  true
-                 #(atom nil)
-                 reset!)))
+                 #(clojure.lang.Var/create)
+                 (fn [^clojure.lang.Var s v]
+                   (.bindRoot s v)))))
