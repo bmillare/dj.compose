@@ -19,19 +19,19 @@ The goal of this library is to add compositional power to direct and late bindin
 ## Example Usage
 
 ```clojure
-(let [bind-fn-map {:conj-ping (fnb #{} #{}
-                                (fn [v]
-                                  (conj v :ping)))
-                   :ping (fnb #{conj-ping} #{pong}
-                           (fn [n v]
-                             (if (> n 0)
-                               (@pong n (conj-ping v))
-                               v)))
-                   :pong-message (fnb #{} #{}
-                                   :pong)
-                   :pong (fnb #{pong-message} #{ping}
-                           (fn [n v]
-                             (@ping (dec n) (conj v pong-message))))}
+(let [fnb-map {:conj-ping (fnb #{} #{}
+                            (fn [v]
+                              (conj v :ping)))
+               :ping (fnb #{conj-ping} #{pong}
+                       (fn [n v]
+                         (if (> n 0)
+                           (@pong n (conj-ping v))
+                           v)))
+               :pong-message (fnb #{} #{}
+                               :pong)
+               :pong (fnb #{pong-message} #{ping}
+                       (fn [n v]
+                         (@ping (dec n) (conj v pong-message))))}
       ping (-> bind-map
                (->bind-map :ping)
                :ping
@@ -41,7 +41,7 @@ The goal of this library is to add compositional power to direct and late bindin
 [:ping :pong :ping :pong :ping :pong :ping :pong :ping :pong]
 ```
 
-Note that `bind-fn-map` is just a hashmap, so we gain all the composition power of using hashmaps. We can arbitrarily `assoc`, `dissoc`, and `merge` other `bind-fn-map`s.
+Note that `fnb-map` is just a hashmap, so we gain all the composition power of using hashmaps. We can arbitrarily `assoc`, `dissoc`, and `merge` other `fnb-map`s.
 
 # Methods & Concepts
 
@@ -106,3 +106,7 @@ If you don't provide your own reference type, dj.compose will use atoms.
 
 *Performance Note:*
 To minimize `deref` overhead, use `java.util.concurrent.atomic.AtomicReference` which has a `(.get)` method. This is slightly faster than **atoms** since we remove an extra invocation. The downside is you will need to typehint the symbols.
+
+## License
+
+Copyright (c) Brent Millare. All rights reserved. The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license. You must not remove this notice, or any other, from this software.
