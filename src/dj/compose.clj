@@ -1,13 +1,24 @@
 (ns dj.compose
-  (:require [clojure.set :as cs]))
+  (:require [clojure.set :as cs]
+            [dj.compose.algorithm :as dca]))
 
-(defmacro fnb
+;; This library provides two compositional methods.
+
+;; 1. compile-time generated values using fnc (c stands compile-time)
+;; 2. run-time generated values using fnr (r stand for run-time)
+
+;; Compile time composition
+
+(defmacro fnc
   "
 
-direct-bindings and late-bindings must be sets of plain symbols, no namespaces
+returns a function that is expected to be called during compiling
+step. Metadata is added to specify direct and late bound dependencies,
+which must be plain symbols with no namespaces.
 
-fnb returns a function that accepts a single map of keys to
-expressions/functions that may depend on late-bounded references
+Typical usage would to have the value returned by this fnc to be a
+fn. Then at compile-time, ->fn-map would pass these values (fns) to
+fns that depend on them, thus enabling mutually recursive composition.
 
 "
   [direct-bindings late-bindings & body]
@@ -17,23 +28,25 @@ expressions/functions that may depend on late-bounded references
      {:dj.compose {:direct-bindings ~(set (map keyword direct-bindings))
                    :late-bindings ~(set (map keyword late-bindings))}}))
 
-(defn ->bind-map
+(defn ->fn-map
   "
+Provides a more composable construct than letfn.
+
 returns a hashmap of keywords -> values
 
 Usually these values are functions to take advantage of the late
 binding features but they can be plain values to take advantage of the
 compositional power of maps.
 
-fnb-map: keywords -> fnbs
+fnc-map: keywords -> fncs
 
 "
-  ([fnb-map root-key alias-map root-late? ref-fn ref-set-fn!]
+  ([fnc-map root-key alias-map root-late? ref-fn ref-set-fn!]
      ((fn add-bind [references temp-root late?]
-        (let [the-fnb (or (fnb-map temp-root)
-                          (fnb-map (alias-map temp-root))
-                          (throw (Exception. (str "keyword " temp-root " not found in fnb-map"))))
-              {:keys [direct-bindings late-bindings]} (-> the-fnb
+        (let [the-fnc (or (fnc-map temp-root)
+                          (fnc-map (alias-map temp-root))
+                          (throw (Exception. (str "keyword " temp-root " not found in fnc-map"))))
+              {:keys [direct-bindings late-bindings]} (-> the-fnc
                                                           meta
                                                           :dj.compose)
               the-ref (when late?
@@ -52,25 +65,105 @@ fnb-map: keywords -> fnbs
                              temp-root
                              (if late?
                                the-ref
-                               (the-fnb references')))
+                               (the-fnc references')))
                            (reduce (if-add true)
                                    references'
                                    late-bindings))]
           (when late?
-            (ref-set-fn! the-ref (the-fnb return)))
+            (ref-set-fn! the-ref (the-fnc return)))
           return))
       {}
       root-key
       root-late?))
-  ([fnb-map root-key]
-     (->bind-map fnb-map
-                 root-key
-                 {}))
-  ([fnb-map root-key alias-map]
-     (->bind-map fnb-map
-                 root-key
-                 alias-map
-                 true
-                 #(clojure.lang.Var/create)
-                 (fn [^clojure.lang.Var s v]
-                   (.bindRoot s v)))))
+  ([fnc-map root-key]
+     (->fn-map fnc-map
+               root-key
+               {}))
+  ([fnc-map root-key alias-map]
+     (->fn-map fnc-map
+               root-key
+               alias-map
+               true
+               #(clojure.lang.Var/create)
+               (fn [^clojure.lang.Var s v]
+                 (.bindRoot s v)))))
+
+;; ----------------------------------------------------------------------
+
+;; Complement of a fnc-map is a fnr-map
+
+(defmacro fnr
+  "
+
+returns a function that is expected to be called during compiling
+step. Metadata is added to specify direct and late bound dependencies,
+which must be plain symbols with no namespaces.
+
+Typical usage would to have the value returned by this fnc to be a
+fn. Then at compile-time, ->fn-map would pass these values (fns) to
+fns that depend on them, thus enabling mutually recursive composition.
+
+"
+  [bindings & body]
+  `(with-meta (fn ~bindings
+                ~@body)
+     {:dj.compose {:dependencies '~(mapv keyword bindings)}}))
+
+(declare ^:dynamic eval-pass)
+
+(defn ->let-fn [fnr-map root-key input-keys]
+  (let [input-key-set (set input-keys)
+        available-keys (set (keys fnr-map))
+        shaken-keys ((fn collect [all-dependents temp-key]
+                       (let [the-fnr (temp-key fnr-map)
+                             dependents (-> the-fnr
+                                            meta
+                                            :dj.compose
+                                            :dependencies
+                                            set
+                                            (cs/difference input-key-set))]
+                         (if (empty? dependents)
+                           (conj all-dependents
+                                 temp-key)
+                           (reduce collect
+                                   (cs/union dependents all-dependents)
+                                   dependents))))
+                     #{root-key}
+                     root-key)
+        shaken-map (select-keys fnr-map shaken-keys)
+        shaken-dag (reduce-kv (fn [ret k the-fnr]
+                                (let [dependents (-> the-fnr
+                                                     meta
+                                                     :dj.compose
+                                                     :dependencies)]
+                                  (assoc ret
+                                    k
+                                    (cs/difference (set dependents)
+                                                   input-key-set))))
+                              {}
+                              shaken-map)
+        sorted-keys (dca/topological-sort shaken-dag)
+        symbols (reduce (fn [ret k]
+                          (assoc ret
+                            k (-> k
+                                  name
+                                  gensym)))
+                        {}
+                        shaken-keys)]
+    (binding [eval-pass shaken-map]
+      (eval `(let ~(vec
+                    (mapcat (fn [k]
+                              (list (symbols k) `(~k eval-pass)))
+                            shaken-keys))
+               (fn ~(mapv (comp symbol name) input-keys)
+                 (let ~(vec
+                        (mapcat (fn [k]
+                                  (list (symbol (name k))
+                                        `(~(symbols k) ~@(map (comp symbol name)
+                                                              (-> k
+                                                                  shaken-map
+                                                                  meta
+                                                                  :dj.compose
+                                                                  :dependencies)))))
+                                sorted-keys))
+                   ~(symbol (name root-key)))))))))
