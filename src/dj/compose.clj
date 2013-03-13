@@ -109,6 +109,18 @@ fns that depend on them, thus enabling mutually recursive composition.
                 ~@body)
      {:dj.compose {:dependencies '~(mapv keyword bindings)}}))
 
+(defmacro wrap-fnr
+  "
+Convenience macro:
+
+adds dependency metadata to an existing fn or var
+
+Takes a fn-or-var and a vector of keys
+"
+  [fn-or-var vec-of-keys]
+  `(with-meta ~fn-or-var
+     {:dj.compose {:dependencies ~vec-of-keys}}))
+
 (declare ^:dynamic eval-pass)
 
 (defn ->let-fn [fnr-map root-key input-keys]
