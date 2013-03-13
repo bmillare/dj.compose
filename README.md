@@ -7,8 +7,8 @@ Programmers can locally define bindings to values and mutually recursive functio
 
 * The bindings become unwieldy. If you want to seperate and test sub-components, users must copy paste the definitions into a new `let` or `letfn` form.
 * Bindings are not composable. Users cannot arbitrarily add, remove, and combine different sets of expressions or functions.
-* For `let` binding order must be compatible with the dependency graph, making the code less declarative.
-* For `letfn` for efficiency, we would prefer to not use references for non-cyclic and instead refer to these functions directly.
+* For `let`, binding order must be compatible with the dependency graph, making the code less declarative.
+* For `letfn`, we would prefer to not use references for non-cyclic and instead refer to these functions directly for efficiency.
 
 This goal of this library is to provide methods for *declaratively* composing both mutual recursive functions and `let` bindings.
 
@@ -61,11 +61,11 @@ Note that `fnc-map` is just a hashmap, so we gain all the composition power of u
 
 * This library obtains compositional power by using functions in hashmaps. Functions enable binding values under different contexts, and hashmaps give the ability to add, remove, and merge different sets of data.
 * This library uses metadata to store the dependency information.
-* Two different function constructors are defined, `fnc` and `fnr`. The "c" and "r" stand for **compile-time** and **run-time** respectively. The two types are necessary because when users define bindings for the **lefn-like** case, the bindings won't be used immediately but only later when the functions are called, whereas when defining bindings for the **let-like** case, the values will be passed on and immediately used in the dependent.
+* Two different function constructors are defined, `fnc` and `fnr`. The "c" and "r" stand for **compile-time** and **run-time** respectively. The two types are necessary because when users define bindings for the **lefn-like** case, the bindings won't be used immediately but only later when the functions are called, whereas when defining bindings for the **let-like** case, the values will be passed on and immediately used by the dependent.
 
 ## The `fnc` macro in detail
 
-A **compile-time function**, or `fnc` for short, is a function that accepts a **fn-map** (map of keywords to **user functions**), and returns a **user function** (these can also be a plain value if you wanted to). It is expected that the **fn-map** will be passed to the `fnc`s at a "compile" time. `fnc` will destructure the map passed and these values will close over whatever is in the body. Typically it makes sense to make the body a anonymous function definition.
+A **compile-time function**, or `fnc` for short, is a function that accepts a **fn-map** (map of keywords to **user functions**), and returns a **user function** (these can also be a plain value if you wanted to). It is expected that the **fn-map** will be passed to the `fnc`s at a "compile" time. `fnc` will destructure the map passed and these values will close over whatever is in the body. Typically it makes sense to make the body an anonymous function definition.
 
 Raw usage of a `fnc` (not something a user would do typically):
 ```clojure
@@ -83,7 +83,7 @@ Usage of the `fnc` macro. `fnc`s accept a set of direct and late binding symbols
 	late-compile)))
 ```
 
-Users will store there `fnc`s in a hashmap of keywords to `fnc`s. When users are ready to compile a these `fnc`s, they will use `(->fn-map)` to produce a hashmap of compiled **user functions**, which we name them **fn-maps**.
+Users will store there `fnc`s in a hashmap of keywords to `fnc`s. When users are ready to compile `fnc`s, they will use `(->fn-map)` to produce a hashmap of compiled **user functions**, which we name them **fn-maps**.
 
 In review, these **fn-maps** have the following useful properties:
 
