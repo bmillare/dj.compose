@@ -1,6 +1,8 @@
 (ns dj.compose.algorithm
   (:require [clojure.set :as cs]))
 
+;; Utilities for computing dependencies
+
 (defn reverse-dag
   "returns a dag but directions are now reversed"
   [dag]
