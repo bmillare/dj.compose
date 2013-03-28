@@ -123,7 +123,15 @@ Takes a fn-or-var and a vector of keys
 
 (declare ^:dynamic eval-pass)
 
-(defn ->let-fn [fnr-map root-key input-keys]
+(defn ->let-fn
+  "
+given a map of functions that produce values, will compose them based on dependencies
+
+the composed function will return the value returned by the function mapped to the root-key
+
+input-keys are keys that the let-fn will take as input
+"
+  [fnr-map root-key input-keys]
   (let [input-key-set (set input-keys)
         available-keys (set (keys fnr-map))
         shaken-keys ((fn collect [all-dependents temp-key]
