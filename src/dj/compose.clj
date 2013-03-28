@@ -142,6 +142,10 @@ Takes a fn-or-var and a vector of keys
                                    dependents))))
                      #{root-key}
                      root-key)
+        undefined-keys (cs/difference shaken-keys available-keys)
+        _ (if (empty? undefined-keys)
+            nil
+            (throw (Exception. (str "Unbound keys " undefined-keys))))
         shaken-map (select-keys fnr-map shaken-keys)
         shaken-dag (reduce-kv (fn [ret k the-fnr]
                                 (let [dependents (-> the-fnr
