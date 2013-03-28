@@ -174,20 +174,21 @@ input-keys are keys that the let-fn will take as input
                                   gensym)))
                         {}
                         shaken-keys)]
-    (binding [eval-pass shaken-map]
-      (eval `(let ~(vec
-                    (mapcat (fn [k]
-                              (list (symbols k) `(~k eval-pass)))
-                            shaken-keys))
-               (fn ~(mapv (comp symbol name) input-keys)
-                 (let ~(vec
-                        (mapcat (fn [k]
-                                  (list (symbol (name k))
-                                        `(~(symbols k) ~@(map (comp symbol name)
-                                                              (-> k
-                                                                  shaken-map
-                                                                  meta
-                                                                  :dj.compose
-                                                                  :dependencies)))))
-                                sorted-keys))
-                   ~(symbol (name root-key)))))))))
+    (with-meta (binding [eval-pass shaken-map]
+                 (eval `(let ~(vec
+                               (mapcat (fn [k]
+                                         (list (symbols k) `(~k eval-pass)))
+                                       shaken-keys))
+                          (fn ~(mapv (comp symbol name) input-keys)
+                            (let ~(vec
+                                   (mapcat (fn [k]
+                                             (list (symbol (name k))
+                                                   `(~(symbols k) ~@(map (comp symbol name)
+                                                                         (-> k
+                                                                             shaken-map
+                                                                             meta
+                                                                             :dj.compose
+                                                                             :dependencies)))))
+                                           sorted-keys))
+                              ~(symbol (name root-key)))))))
+      {:dj.compose {:dag shaken-dag}})))
