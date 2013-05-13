@@ -155,17 +155,23 @@ input-keys are keys that the let-fn will take as input
             nil
             (throw (Exception. (str "Unbound keys " undefined-keys))))
         shaken-map (select-keys fnr-map shaken-keys)
-        shaken-dag (reduce-kv (fn [ret k the-fnr]
-                                (let [dependents (-> the-fnr
-                                                     meta
-                                                     :dj.compose
-                                                     :dependencies)]
-                                  (assoc ret
-                                    k
-                                    (cs/difference (set dependents)
-                                                   input-key-set))))
+        shaken-dag-with-inputs (reduce-kv (fn [ret k the-fnr]
+                                            (let [dependents (-> the-fnr
+                                                                 meta
+                                                                 :dj.compose
+                                                                 :dependencies)]
+                                              (assoc ret
+                                                k
+                                                (set dependents))))
+                                          {}
+                                          shaken-map)
+        shaken-dag (reduce-kv (fn [ret k dependents]
+                                (assoc ret
+                                  k
+                                  (cs/difference dependents
+                                                 input-key-set)))
                               {}
-                              shaken-map)
+                              shaken-dag-with-inputs)
         sorted-keys (dca/topological-sort shaken-dag)
         symbols (reduce (fn [ret k]
                           (assoc ret
@@ -191,4 +197,4 @@ input-keys are keys that the let-fn will take as input
                                                                              :dependencies)))))
                                            sorted-keys))
                               ~(symbol (name root-key)))))))
-      {:dj.compose {:dag shaken-dag}})))
+      {:dj.compose {:dag shaken-dag-with-inputs}})))
